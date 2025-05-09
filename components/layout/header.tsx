@@ -12,7 +12,7 @@ const HeaderLayout = () => {
   const { isConnected } = useAccount();
 
   return (
-    <div className="flex flex-row items-center justify-between w-full px-10 bg-white p-5 rounded-full border-2 border-border">
+    <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 items-center justify-between w-full min-w-md px-10 bg-white p-5 rounded-full border-2 border-border">
       <Link href="/">
         <h1 className="text-2xl font-sans font-medium text-black">
           Swap<span className="text-main">piness</span>

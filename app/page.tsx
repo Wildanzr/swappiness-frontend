@@ -7,7 +7,7 @@ import SwapForm from "./_components/swap-form";
 const TestLogin = () => {
   return (
     <div className="container mx-auto flex flex-col space-y-10 items-center justify-center h-full">
-      <div className="flex flex-row items-center justify-center gap-2 rounded-full bg-white p-2 border-border border-2">
+      <div className="w-fit min-w-fit flex flex-row items-center justify-center gap-2 rounded-full bg-white p-2 border-border border-2">
         <Image
           src={"/assets/coinbase.svg"}
           alt="base"
@@ -15,7 +15,7 @@ const TestLogin = () => {
           height={24}
           className=""
         />
-        <p className="text-2xl font-medium text-coinbase font-sans">
+        <p className="text-2xl font-medium text-coinbase font-sans whitespace-nowrap">
           Build on Base
         </p>
       </div>
