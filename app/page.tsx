@@ -1,26 +1,35 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useSession } from "next-auth/react";
+import Image from "next/image";
 import React from "react";
+import SwapForm from "./_components/swap-form";
 
 const TestLogin = () => {
-  const session = useSession();
-
   return (
-    <div className="container mx-auto flex flex-col items-center justify-center h-full">
-      <ConnectButton />
-
-      <Button>Hit Me Up!</Button>
-      <div className="flex">
-        <p className="text-2xl">
-          {session.status === "authenticated"
-            ? `Logged in as ${session.data?.user?.address}`
-            : "Not logged in"}
+    <div className="container mx-auto flex flex-col space-y-10 items-center justify-center h-full">
+      <div className="flex flex-row items-center justify-center gap-2 rounded-full bg-white p-2 border-border border-2">
+        <Image
+          src={"/assets/coinbase.svg"}
+          alt="base"
+          width={24}
+          height={24}
+          className=""
+        />
+        <p className="text-2xl font-medium text-coinbase font-sans">
+          Build on Base
         </p>
-        <p className="text-2xl">{session.data?.accessToken}</p>
       </div>
+
+      <div className="flex flex-col items-center justify-center space-y-5">
+        <h1 className="font-sans text-6xl font-semibold text-center text-neutral-900">
+          Swap Globally,
+        </h1>
+        <h1 className="font-sans text-6xl font-semibold text-center text-neutral-900">
+          Spread Happiness
+        </h1>
+      </div>
+
+      <SwapForm />
     </div>
   );
 };

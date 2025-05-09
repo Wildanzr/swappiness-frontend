@@ -33,7 +33,7 @@ const HeaderLayout = () => {
       </div>
 
       {isConnected ? (
-        <ConnectButton />
+        <ConnectButton chainStatus={"none"} accountStatus={"avatar"} />
       ) : (
         <Button
           className="rounded-full cursor-pointer"
