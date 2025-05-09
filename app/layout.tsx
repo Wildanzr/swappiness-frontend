@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Open_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import AuthProvider from "@/providers/AuthProvider";
 import { getServerSession, Session } from "next-auth";
@@ -7,9 +7,38 @@ import { authConfig } from "@/config/auth";
 import { headers } from "next/headers";
 import WrapperLayout from "@/components/layout/wrapper";
 
-const openSans = Open_Sans({
-  variable: "--font-open-sans",
-  subsets: ["latin"],
+const coinbaseDisplay = localFont({
+  src: [
+    {
+      path: "../public/assets/fonts/Coinbase_Display-Extra_Light-web-1.32.woff2",
+      weight: "200",
+      style: "normal",
+    },
+    {
+      path: "../public/assets/fonts/Coinbase_Display-Light-web-1.32.woff2",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "../public/assets/fonts/Coinbase_Display-Regular-web-1.32.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../public/assets/fonts/Coinbase_Display-Medium-web-1.32.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../public/assets/fonts/Coinbase_Display-Bold-web-1.32.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-coinbase-display",
+  display: "swap",
+  fallback: ["system-ui", "sans-serif"],
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -80,7 +109,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${openSans.variable} font-sans bg-[#DDE9F3] text-neutral-900 antialiased`}
+        className={`${coinbaseDisplay.variable} font-sans bg-[#DDE9F3] text-neutral-900 antialiased`}
       >
         <AuthProvider session={session} cookie={cookie}>
           <WrapperLayout>{children}</WrapperLayout>

@@ -26,12 +26,17 @@ import { AVAILABLE_TOKENS_IN, AVAILABLE_TOKENS_OUT } from "@/constants/tokens";
 import Image from "next/image";
 import { Trash } from "@phosphor-icons/react/dist/ssr";
 import TokenInputSelection from "./token-input";
+import { isAddress } from "viem";
 
 const formSchema = z.object({
-  tokenIn: z.string().min(1, "Token In is required"),
+  tokenIn: z.custom<`0x${string}`>().refine((value) => isAddress(value), {
+    message: "Invalid token address",
+  }),
   receivers: z
     .object({
-      address: z.string().min(1, "Receiver address is required"),
+      address: z.custom<`0x${string}`>().refine((value) => isAddress(value), {
+        message: "Invalid wallet address",
+      }),
       tokenOut: z.string().min(1, "Token Out is required"),
       amount: z.number().min(1, "Amount is required"),
     })
@@ -43,10 +48,10 @@ const SwapForm = () => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      tokenIn: "",
+      tokenIn: undefined,
       receivers: [
         {
-          address: "",
+          address: undefined,
           tokenOut: "",
           amount: 0,
         },
@@ -116,22 +121,26 @@ const SwapForm = () => {
         </div>
 
         {/* Column Headers */}
-        <div className="grid grid-cols-3 gap-5 mb-2">
-          <p className="text-neutral-900 font-sans font-medium">
+        <div className="grid grid-cols-8 gap-5 mb-2">
+          <p className="text-neutral-900 col-span-4 font-sans font-medium">
             Wallet Address
           </p>
-          <p className="text-neutral-900 font-sans font-medium">Token</p>
-          <p className="text-neutral-900 font-sans font-medium">Amount</p>
+          <p className="text-neutral-900 col-span-2 font-sans font-medium">
+            Token
+          </p>
+          <p className="text-neutral-900 col-span-2 font-sans font-medium">
+            Amount
+          </p>
         </div>
 
         {/* Recipients Fields */}
         {fields.map((field, index) => (
-          <div key={field.id} className="grid grid-cols-3 gap-5 mb-3">
+          <div key={field.id} className="grid grid-cols-8 gap-5 mb-3">
             <FormField
               control={form.control}
               name={`receivers.${index}.address`}
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="col-span-4">
                   <FormControl>
                     <Input
                       placeholder="0x123"
@@ -147,7 +156,7 @@ const SwapForm = () => {
               control={form.control}
               name={`receivers.${index}.tokenOut`}
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="col-span-2">
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
@@ -180,7 +189,7 @@ const SwapForm = () => {
                 </FormItem>
               )}
             />
-            <div className="flex flex-row gap-2 items-center justify-center">
+            <div className="flex flex-row gap-2 col-span-2 items-start justify-start">
               <FormField
                 control={form.control}
                 name={`receivers.${index}.amount`}
@@ -218,7 +227,9 @@ const SwapForm = () => {
 
         <Button
           type="button"
-          onClick={() => append({ address: "", tokenOut: "", amount: 0 })}
+          onClick={() =>
+            append({ address: "0x" as `0x${string}`, tokenOut: "", amount: 0 })
+          }
           className="mt-2 w-fit"
           disabled={fields.length >= 10}
         >

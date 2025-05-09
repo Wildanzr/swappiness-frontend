@@ -62,7 +62,7 @@
   --shadow-shadow: var(--shadow);
   --font-weight-base: 500;
   --font-weight-heading: 700;
-  --font-sans: var(--font-open-sans);
+  --font-sans: var(--font-coinbase-display);
 }
 
 @layer base {
