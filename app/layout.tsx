@@ -1,18 +1,14 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Open_Sans } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "@/providers/AuthProvider";
 import { getServerSession, Session } from "next-auth";
 import { authConfig } from "@/config/auth";
 import { headers } from "next/headers";
+import WrapperLayout from "@/components/layout/wrapper";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const openSans = Open_Sans({
+  variable: "--font-open-sans",
   subsets: ["latin"],
 });
 
@@ -31,10 +27,10 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${openSans.variable} font-sans bg-[#DDE9F3] text-neutral-900 antialiased`}
       >
         <AuthProvider session={session} cookie={cookie}>
-          {children}
+          <WrapperLayout>{children}</WrapperLayout>
         </AuthProvider>
       </body>
     </html>

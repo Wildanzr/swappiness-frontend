@@ -9,7 +9,7 @@ const TestLogin = () => {
   const session = useSession();
 
   return (
-    <>
+    <div className="container mx-auto flex flex-col items-center justify-center h-full">
       <ConnectButton />
 
       <Button>Hit Me Up!</Button>
@@ -21,7 +21,7 @@ const TestLogin = () => {
         </p>
         <p className="text-2xl">{session.data?.accessToken}</p>
       </div>
-    </>
+    </div>
   );
 };
 
