@@ -25,6 +25,7 @@ import {
 import { AVAILABLE_TOKENS_IN, AVAILABLE_TOKENS_OUT } from "@/constants/tokens";
 import Image from "next/image";
 import { Trash } from "@phosphor-icons/react/dist/ssr";
+import TokenInputSelection from "./token-input";
 
 const formSchema = z.object({
   tokenIn: z.string().min(1, "Token In is required"),
@@ -89,22 +90,7 @@ const SwapForm = () => {
                 <SelectContent>
                   {AVAILABLE_TOKENS_IN.map((item, idx) => (
                     <SelectItem key={idx} value={item.token.address}>
-                      <div className="flex flex-row items-center justify-start space-x-4">
-                        <Image
-                          src={item.image}
-                          alt={item.token.name!}
-                          width={30}
-                          height={30}
-                          className="rounded-full bg-white p-1"
-                        />
-                        <p className="text-neutral-900 font-sans text-base font-semibold">
-                          {item.token.symbol}
-                        </p>
-                      </div>
-
-                      <p className="text-neutral-900 font-sans text-sm font-normal">
-                        {item.token.name}
-                      </p>
+                      <TokenInputSelection item={item} />
                     </SelectItem>
                   ))}
                 </SelectContent>

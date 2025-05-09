@@ -3,11 +3,6 @@ import { base } from "viem/chains";
 import { Token } from "@uniswap/sdk-core";
 import { zeroAddress } from "viem";
 
-interface AvailableToken {
-  token: Token;
-  image: string;
-}
-
 const ETH = new Token(base.id, zeroAddress, 18, "ETH", "Ether");
 const WETH = new Token(
   base.id,

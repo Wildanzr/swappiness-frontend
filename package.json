@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
+    "dev": "rimraf .next && next dev --turbopack",
+    "build": "rimraf .next && next build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -27,6 +27,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.3",
+    "rimraf": "^6.0.1",
     "siwe": "^3.0.0",
     "tailwind-merge": "^3.2.0",
     "viem": "2.x",
