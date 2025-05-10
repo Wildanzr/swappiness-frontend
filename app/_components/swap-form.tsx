@@ -31,6 +31,8 @@ import { quoteExactOutput } from "@/lib/qouter";
 import { Token } from "@uniswap/sdk-core";
 import { useDebounceCallback } from "usehooks-ts";
 import { simplifyNumber } from "@/lib/utils";
+import { useAccount } from "wagmi";
+import DisperseButton from "./disperse-button";
 
 interface ToBeQuoted {
   tokenIn: Token;
@@ -62,6 +64,7 @@ const formSchema = z.object({
 });
 
 const SwapForm = () => {
+  const { address } = useAccount();
   const [tokenInput, setTokenInput] = useState<Token | undefined>(undefined);
   const [tobeQuoted, setToBeQuoted] = useState<ToBeQuoted[]>([]);
   const [quote, setQuote] = useState<number | undefined>(undefined);
@@ -138,7 +141,7 @@ const SwapForm = () => {
 
   useEffect(() => {
     const fetchQuotes = async () => {
-      if (tobeQuoted.length > 0) {
+      if (tobeQuoted.length > 0 && tokenInput) {
         console.log("To be quoted: ", tobeQuoted);
         setIsQuoting(true);
         const quotes = await Promise.all(
@@ -155,7 +158,8 @@ const SwapForm = () => {
 
         // Calculate sum of all quotes
         const totalQuote = quotes.reduce((acc, curr) => acc + curr, 0);
-        const slippage = (totalQuote * 2.5) / 100;
+        const slippage =
+          (totalQuote * Number(form.getValues("slippage"))) / 100;
         console.log("2.5% fee: ", slippage);
         setQuote(totalQuote + slippage);
         setIsQuoting(false);
@@ -165,7 +169,8 @@ const SwapForm = () => {
     };
 
     fetchQuotes();
-  }, [tobeQuoted]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, tobeQuoted, tokenInput, form.watch("slippage")]);
 
   return (
     <Form {...form}>
@@ -173,18 +178,6 @@ const SwapForm = () => {
         onSubmit={form.handleSubmit(onSubmit)}
         className="w-full min-w-md max-w-2xl h-full flex flex-col space-y-5"
       >
-        <Button
-          type="button"
-          onClick={() =>
-            quoteExactOutput(
-              AVAILABLE_TOKENS_IN[0].token,
-              AVAILABLE_TOKENS_IN[2].token,
-              "2400"
-            )
-          }
-        >
-          Test
-        </Button>
         <FormField
           control={form.control}
           name="tokenIn"
@@ -356,23 +349,64 @@ const SwapForm = () => {
           </div>
         ))}
 
-        <div className="flex flex-row items-center justify-between pt-2">
-          <Button
-            type="button"
-            onClick={() =>
-              append({ address: "" as `0x${string}`, tokenOut: "", amount: "" })
-            }
-            className="mt-2 w-fit"
-            disabled={fields.length >= 10}
-          >
-            Add Recipients
-          </Button>
+        <div className="flex flex-row items-start justify-between pt-2">
+          <div className="flex flex-row items-start justify-start gap-5">
+            <Button
+              type="button"
+              onClick={() =>
+                append({
+                  address: "" as `0x${string}`,
+                  tokenOut: "",
+                  amount: "",
+                })
+              }
+              className="mt-2 w-fit"
+              disabled={fields.length >= 10}
+            >
+              Add Recipients
+            </Button>
+            <FormField
+              control={form.control}
+              name={"slippage"}
+              render={({ field }) => (
+                <FormItem className="gap-0">
+                  <FormControl>
+                    <div className="relative mt-2 max-w-32">
+                      <Input
+                        disabled={tokenInput === undefined}
+                        type="number"
+                        id="amount"
+                        autoComplete="off"
+                        inputMode="decimal"
+                        step="any"
+                        {...field}
+                        onKeyDown={(e) => {
+                          if (e.key === ",") {
+                            e.preventDefault();
+                          }
+                        }}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(",", ".");
+                          field.onChange(value);
+                        }}
+                        className="pr-16 bg-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center text-sm pr-3 pointer-events-none text-gray-500">
+                        % slippage
+                      </div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           {tokenInput && (
             <div className="flex flex-col items-end justify-start">
               <p className="text-black/50 font-sans text-base">Total</p>
               {isQuoting ? (
-                <Spinner className="animate-spin text-black/50 size-10" />
+                <Spinner className="animate-spin text-black/50 size-8" />
               ) : (
                 <p className="text-neutral-900 font-sans text-xl font-semibold">
                   {new Intl.NumberFormat("en-US", {
@@ -392,9 +426,16 @@ const SwapForm = () => {
           )}
         </div>
 
-        <Button type="submit" className="w-full text-lg font-semibold p-5">
-          Get Quote
-        </Button>
+        <DisperseButton
+          quote={quote}
+          tokenInput={tokenInput}
+          disabled={
+            isQuoting ||
+            tokenInput === undefined ||
+            !form.formState.isValid ||
+            address === undefined
+          }
+        />
       </form>
     </Form>
   );

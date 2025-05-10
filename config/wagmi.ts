@@ -1,16 +1,23 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
-import { base } from "viem/chains";
+import { localhost, base } from "viem/chains";
 import { cookieStorage, createStorage, http } from "wagmi";
 
+const MODE = process.env.NEXT_PUBLIC_WEB3_MODE as "testnet" | "mainnet";
+
 export const wagmiConfig = getDefaultConfig({
-  appName: "StreamFund",
+  appName: "Swappiness",
   projectId: process.env.NEXT_PUBLIC_PROJECT_ID!,
-  chains: [base],
+  chains: MODE === "mainnet" ? [base] : [localhost],
   ssr: true,
   storage: createStorage({
     storage: cookieStorage,
   }),
-  transports: {
-    [base.id]: http(),
-  },
+  transports:
+    MODE === "mainnet"
+      ? {
+          [base.id]: http(),
+        }
+      : {
+          [localhost.id]: http(),
+        },
 });

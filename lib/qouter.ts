@@ -21,6 +21,10 @@ export const quoteExactOutput = async (
     tokenIn = WETH;
   }
 
+  if (tokenIn.address === tokenOut.address) {
+    return amountOut;
+  }
+
   const qouterAddress = QUOTER_ADDRESSES[base.id];
   const quoterContract = new ethers.Contract(
     qouterAddress,

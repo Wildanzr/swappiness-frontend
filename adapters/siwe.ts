@@ -24,7 +24,7 @@ export const siweAdapter = createAuthenticationAdapter({
     return createSiweMessage({
       domain: window.location.hostname,
       address,
-      statement: `You are signing in to StreamFund on ${new Date().toLocaleString()}`,
+      statement: `You are signing in to Swappiness on ${new Date().toLocaleString()}`,
       uri: window.location.origin,
       version: "1",
       chainId,
