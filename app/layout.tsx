@@ -6,6 +6,7 @@ import { getServerSession, Session } from "next-auth";
 import { authConfig } from "@/config/auth";
 import { headers } from "next/headers";
 import WrapperLayout from "@/components/layout/wrapper";
+import { Toaster } from "react-hot-toast";
 
 const coinbaseDisplay = localFont({
   src: [
@@ -112,7 +113,15 @@ export default async function RootLayout({
         className={`${coinbaseDisplay.variable} font-sans bg-[#DDE9F3] text-neutral-900 antialiased`}
       >
         <AuthProvider session={session} cookie={cookie}>
-          <WrapperLayout>{children}</WrapperLayout>
+          <WrapperLayout>
+            {children}
+            <Toaster
+              toastOptions={{
+                duration: 3000,
+                position: "top-right",
+              }}
+            />
+          </WrapperLayout>
         </AuthProvider>
       </body>
     </html>

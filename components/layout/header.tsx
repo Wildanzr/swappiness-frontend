@@ -15,18 +15,18 @@ const HeaderLayout = () => {
     <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 items-center justify-between w-full min-w-md px-10 bg-white p-5 rounded-full border-2 border-border">
       <Link href="/">
         <h1 className="text-2xl font-sans font-medium text-black">
-          Swap<span className="text-main">piness</span>
+          Swap<span className="text-coinbase">piness</span>
         </h1>
       </Link>
 
       <div className="flex flex-row items-center justify-center gap-5">
         <Link href="/about">
-          <p className="text-lg font-sans font-medium text-black hover:text-main transition-all duration-300">
+          <p className="text-lg font-sans font-medium text-black hover:text-coinbase transition-all duration-300">
             About
           </p>
         </Link>
         <Link href="/builders">
-          <p className="text-lg font-sans font-medium text-black hover:text-main transition-all duration-300">
+          <p className="text-lg font-sans font-medium text-black hover:text-coinbase transition-all duration-300">
             Builders
           </p>
         </Link>

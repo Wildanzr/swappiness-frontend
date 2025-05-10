@@ -44,10 +44,6 @@ export const quoteExactOutput = async (
 
   // Convert amountOut to BigNumber with appropriate decimals
   const amountOutBN = ethers.utils.parseUnits(amountOut, tokenOut.decimals);
-  console.log("Token In: ", tokenIn.symbol);
-  console.log("Token Out: ", tokenOut.symbol);
-  console.log(`Amount Out ${amountOut} ${tokenOut.symbol}`);
-
   const quotedAmountIn = await quoterContract.callStatic.quoteExactOutput(
     path,
     amountOutBN
@@ -58,7 +54,31 @@ export const quoteExactOutput = async (
   console.log(
     `Quoted Amount In: ${formattedAmountIn} ${tokenIn.symbol} for ${amountOut} ${tokenOut.symbol}`
   );
+
   return formattedAmountIn;
+};
+
+export const getEncodedPath = (
+  tokenIn: Token,
+  tokenOut: Token
+): `0x${string}` => {
+  if (tokenIn.address === zeroAddress) {
+    tokenIn = WETH;
+  }
+
+  if (tokenIn.address === tokenOut.address) {
+    return tokenIn.address as `0x${string}`;
+  }
+
+  const bestRoute = getSwapRoutes(tokenIn, tokenOut);
+  if (!bestRoute) {
+    console.error("No route found");
+    return "" as `0x${string}`;
+  }
+
+  const addressPath = bestRoute.path.map((token) => token.address).reverse();
+  const feePath = bestRoute.fees.reverse();
+  return encodePath(addressPath, feePath) as `0x${string}`;
 };
 
 // Helper function to encode the path
