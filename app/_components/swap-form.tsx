@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
@@ -24,14 +24,27 @@ import {
 } from "@/components/ui/select";
 import { AVAILABLE_TOKENS_IN, AVAILABLE_TOKENS_OUT } from "@/constants/tokens";
 import Image from "next/image";
-import { Trash } from "@phosphor-icons/react/dist/ssr";
+import { Spinner, Trash } from "@phosphor-icons/react/dist/ssr";
 import TokenInputSelection from "./token-input";
 import { isAddress } from "viem";
 import { quoteExactOutput } from "@/lib/qouter";
+import { Token } from "@uniswap/sdk-core";
+import { useDebounceCallback } from "usehooks-ts";
+import { simplifyNumber } from "@/lib/utils";
+
+interface ToBeQuoted {
+  tokenIn: Token;
+  tokenOut: Token;
+  amountOut: string;
+}
 
 const formSchema = z.object({
   tokenIn: z.custom<`0x${string}`>().refine((value) => isAddress(value), {
-    message: "Invalid token address",
+    message: "Please select a token",
+  }),
+  slippage: z.string().refine((value) => {
+    const numValue = parseFloat(value);
+    return !isNaN(numValue) && numValue >= 0 && numValue <= 100;
   }),
   receivers: z
     .object({
@@ -49,10 +62,17 @@ const formSchema = z.object({
 });
 
 const SwapForm = () => {
+  const [tokenInput, setTokenInput] = useState<Token | undefined>(undefined);
+  const [tobeQuoted, setToBeQuoted] = useState<ToBeQuoted[]>([]);
+  const [quote, setQuote] = useState<number | undefined>(undefined);
+  const [isQuoting, setIsQuoting] = useState(false);
+  const debouncedToBeQuoted = useDebounceCallback(setToBeQuoted, 1000);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       tokenIn: undefined,
+      slippage: "2.5",
       receivers: [
         {
           address: "" as `0x${string}`,
@@ -73,13 +93,96 @@ const SwapForm = () => {
     console.log(data);
   };
 
+  // Watch for changes in receivers' amounts and calculate quote
+  useEffect(() => {
+    const subscription = form.watch(async (value, { name }) => {
+      if ((name?.includes("receivers") || name === "receivers") && tokenInput) {
+        const tobeQouted: ToBeQuoted[] = [];
+
+        value.receivers?.forEach((receiver) => {
+          const amount = parseFloat(receiver?.amount || "0") || 0;
+
+          // Add to tobeQouted if tokenOut is not undefined or empty and amount is valid
+          if (receiver?.tokenOut && amount > 0) {
+            const tokenOut = AVAILABLE_TOKENS_OUT.find(
+              (item) => item.token.address === receiver.tokenOut
+            )?.token as Token;
+
+            tobeQouted.push({
+              tokenIn: tokenInput,
+              tokenOut: tokenOut,
+              amountOut: amount.toString(),
+            });
+          }
+        });
+
+        // Only update toBeQuoted if it has changed
+        const hasChanged =
+          tobeQouted.length !== tobeQuoted.length ||
+          tobeQouted.some(
+            (item, index) =>
+              !tobeQuoted[index] ||
+              item.tokenIn.address !== tobeQuoted[index].tokenIn.address ||
+              item.tokenOut.address !== tobeQuoted[index].tokenOut.address ||
+              item.amountOut !== tobeQuoted[index].amountOut
+          );
+
+        if (hasChanged) {
+          debouncedToBeQuoted(tobeQouted);
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [debouncedToBeQuoted, form, form.watch, tokenInput, tobeQuoted]);
+
+  useEffect(() => {
+    const fetchQuotes = async () => {
+      if (tobeQuoted.length > 0) {
+        console.log("To be quoted: ", tobeQuoted);
+        setIsQuoting(true);
+        const quotes = await Promise.all(
+          tobeQuoted.map(async (item) => {
+            const quote = await quoteExactOutput(
+              item.tokenIn,
+              item.tokenOut,
+              item.amountOut
+            );
+            return parseFloat(quote);
+          })
+        );
+        console.log("Quotes: ", quotes);
+
+        // Calculate sum of all quotes
+        const totalQuote = quotes.reduce((acc, curr) => acc + curr, 0);
+        const slippage = (totalQuote * 2.5) / 100;
+        console.log("2.5% fee: ", slippage);
+        setQuote(totalQuote + slippage);
+        setIsQuoting(false);
+      } else {
+        setQuote(undefined);
+      }
+    };
+
+    fetchQuotes();
+  }, [tobeQuoted]);
+
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
         className="w-full min-w-md max-w-2xl h-full flex flex-col space-y-5"
       >
-        <Button type="button" onClick={() => quoteExactOutput("20000")}>
+        <Button
+          type="button"
+          onClick={() =>
+            quoteExactOutput(
+              AVAILABLE_TOKENS_IN[0].token,
+              AVAILABLE_TOKENS_IN[2].token,
+              "2400"
+            )
+          }
+        >
           Test
         </Button>
         <FormField
@@ -93,7 +196,17 @@ const SwapForm = () => {
               <FormDescription className="text-sm text-neutral-900 font-sans">
                 Token that you want to swap from
               </FormDescription>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  setTokenInput(
+                    AVAILABLE_TOKENS_IN.find(
+                      (item) => item.token.address === value
+                    )?.token
+                  );
+                }}
+                defaultValue={field.value}
+              >
                 <FormControl>
                   <SelectTrigger className="mt-3">
                     <SelectValue placeholder="Select token to swap from" />
@@ -150,6 +263,7 @@ const SwapForm = () => {
                 <FormItem className="col-span-4">
                   <FormControl>
                     <Input
+                      disabled={tokenInput === undefined}
                       placeholder="0x123"
                       className="bg-white"
                       {...field}
@@ -165,6 +279,7 @@ const SwapForm = () => {
               render={({ field }) => (
                 <FormItem className="col-span-2">
                   <Select
+                    disabled={tokenInput === undefined}
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
@@ -204,6 +319,7 @@ const SwapForm = () => {
                   <FormItem>
                     <FormControl>
                       <Input
+                        disabled={tokenInput === undefined}
                         type="number"
                         id="amount"
                         autoComplete="off"
@@ -240,16 +356,41 @@ const SwapForm = () => {
           </div>
         ))}
 
-        <Button
-          type="button"
-          onClick={() =>
-            append({ address: "" as `0x${string}`, tokenOut: "", amount: "" })
-          }
-          className="mt-2 w-fit"
-          disabled={fields.length >= 10}
-        >
-          Add Recipients
-        </Button>
+        <div className="flex flex-row items-center justify-between pt-2">
+          <Button
+            type="button"
+            onClick={() =>
+              append({ address: "" as `0x${string}`, tokenOut: "", amount: "" })
+            }
+            className="mt-2 w-fit"
+            disabled={fields.length >= 10}
+          >
+            Add Recipients
+          </Button>
+
+          {tokenInput && (
+            <div className="flex flex-col items-end justify-start">
+              <p className="text-black/50 font-sans text-base">Total</p>
+              {isQuoting ? (
+                <Spinner className="animate-spin text-black/50 size-10" />
+              ) : (
+                <p className="text-neutral-900 font-sans text-xl font-semibold">
+                  {new Intl.NumberFormat("en-US", {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: tokenInput.decimals,
+                  }).format(
+                    // @ts-expect-error no types yet
+                    simplifyNumber(
+                      quote || 0 / 10 ** tokenInput.decimals,
+                      tokenInput.decimals
+                    )
+                  )}{" "}
+                  {tokenInput.symbol}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
 
         <Button type="submit" className="w-full text-lg font-semibold p-5">
           Get Quote

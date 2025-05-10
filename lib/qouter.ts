@@ -3,12 +3,7 @@ import { QUOTER_ADDRESSES, Token } from "@uniswap/sdk-core";
 import { base } from "viem/chains";
 import Quoter from "@uniswap/v3-periphery/artifacts/contracts/lens/Quoter.sol/Quoter.json";
 import { ethers, providers } from "ethers";
-import {
-  AVAILABLE_TOKENS_IN,
-  AVAILABLE_ROUTES,
-  AVAILABLE_TOKENS_OUT,
-  WETH,
-} from "@/constants/tokens";
+import { AVAILABLE_ROUTES, WETH } from "@/constants/tokens";
 import { formatUnits, zeroAddress } from "viem";
 
 const getProvider = (): providers.Provider => {
@@ -18,13 +13,10 @@ const getProvider = (): providers.Provider => {
 };
 
 export const quoteExactOutput = async (
-  // tokenIn: Token,
-  // tokenOut: Token,
+  tokenIn: Token,
+  tokenOut: Token,
   amountOut: string
 ): Promise<string> => {
-  let tokenIn = AVAILABLE_TOKENS_IN[0].token;
-  const tokenOut = AVAILABLE_TOKENS_OUT[3].token;
-
   if (tokenIn.address === zeroAddress) {
     tokenIn = WETH;
   }
@@ -36,9 +28,6 @@ export const quoteExactOutput = async (
     getProvider()
   );
 
-  // const poolConstants = await getPoolConstants(tokenIn, tokenOut, 500);
-  // console.log("Pool Constants: ", poolConstants);
-
   const bestRoute = getSwapRoutes(tokenIn, tokenOut);
   if (!bestRoute) {
     console.error("No route found");
@@ -47,35 +36,14 @@ export const quoteExactOutput = async (
 
   const addressPath = bestRoute.path.map((token) => token.address).reverse();
   const feePath = bestRoute.fees.reverse();
-
-  console.log("Address Path: ", addressPath);
-  console.log("Fee Path: ", feePath);
-
-  const path = encodePath(addressPath, bestRoute.fees);
-
-  console.log(
-    "H0",
-    "0x50c5725949a6f0c72e6c4a641f24049a917db0cb000064833589fcd6edb6e08f4c7c32d4f71b54bda029130001f44200000000000000000000000000000000000006"
-  );
-  console.log("H1", path);
-  console.log(
-    "Is Same: ",
-    path ===
-      "0x50c5725949a6f0c72e6c4a641f24049a917db0cb000064833589fcd6edb6e08f4c7c32d4f71b54bda029130001f44200000000000000000000000000000000000006"
-  );
-
-  // // Encode the path for the swap
-  // For quoteExactOutput, the path needs to be encoded in reverse order (tokenOut, fee, tokenIn)
-  // const path = encodePath0(
-  //   [poolConstants.token0, poolConstants.token1],
-  //   [poolConstants.fee]
-  // );
+  const path = encodePath(addressPath, feePath);
 
   // Convert amountOut to BigNumber with appropriate decimals
   const amountOutBN = ethers.utils.parseUnits(amountOut, tokenOut.decimals);
-  console.log("Amount Out: ", amountOutBN.toString());
+  console.log("Token In: ", tokenIn.symbol);
+  console.log("Token Out: ", tokenOut.symbol);
+  console.log(`Amount Out ${amountOut} ${tokenOut.symbol}`);
 
-  // Call the quoter contract to get the amount in needed for the desired amount out
   const quotedAmountIn = await quoterContract.callStatic.quoteExactOutput(
     path,
     amountOutBN
@@ -83,9 +51,9 @@ export const quoteExactOutput = async (
 
   // Format the result to a readable string
   const formattedAmountIn = formatUnits(quotedAmountIn, tokenIn.decimals);
-
-  console.log("Quoted Amount In: ", quotedAmountIn.toString());
-  console.log("Formatted Amount In: ", formattedAmountIn);
+  console.log(
+    `Quoted Amount In: ${formattedAmountIn} ${tokenIn.symbol} for ${amountOut} ${tokenOut.symbol}`
+  );
   return formattedAmountIn;
 };
 
