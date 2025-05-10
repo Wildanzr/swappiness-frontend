@@ -12,4 +12,15 @@ declare global {
     token: Token;
     image: string;
   }
+
+  interface AvailableRoute {
+    tokenA: Token;
+    tokenB: Token;
+    fee: number;
+  }
+
+  interface Route {
+    path: Token[];
+    fees: number[];
+  }
 }

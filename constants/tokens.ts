@@ -2,9 +2,10 @@ import { base } from "viem/chains";
 
 import { Token } from "@uniswap/sdk-core";
 import { zeroAddress } from "viem";
+import { FeeAmount } from "@uniswap/v3-sdk";
 
 const ETH = new Token(base.id, zeroAddress, 18, "ETH", "Ether");
-const WETH = new Token(
+export const WETH = new Token(
   base.id,
   "0x4200000000000000000000000000000000000006",
   18,
@@ -43,13 +44,14 @@ const IDRX = new Token(
 const EURC = new Token(
   base.id,
   "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42",
-  18,
+  6,
   "EURC",
   "Euro Coin"
 );
 
 export const AVAILABLE_TOKENS_IN: AvailableToken[] = [
   { token: ETH, image: "/assets/ethereum.png" },
+  { token: WETH, image: "/assets/weth.png" },
   { token: USDC, image: "/assets/usdc.png" },
   { token: USDT, image: "/assets/tether.png" },
   { token: DAI, image: "/assets/dai.png" },
@@ -61,5 +63,26 @@ export const AVAILABLE_TOKENS_OUT: AvailableToken[] = [
   { token: DAI, image: "/assets/dai.png" },
   { token: IDRX, image: "/assets/idrx.png" },
   { token: EURC, image: "/assets/eurc.png" },
-  { token: WETH, image: "/assets/weth.png" },
+  // { token: WETH, image: "/assets/weth.png" },
+];
+
+// V3
+// IDRX/USDC		0.01%
+// USDC/USDT		0.01%
+// WETH/USDT		0.05%
+// EURC/USDC		0.30%
+//// WETH/EURC	  0.30%
+// DAI/USDC		  0.01%
+//// WETH/DAI			0.05%
+// WETH/USDC	  0.05%
+
+export const AVAILABLE_ROUTES: AvailableRoute[] = [
+  { tokenA: IDRX, tokenB: USDC, fee: FeeAmount.LOWEST }, // 0.01%
+  { tokenA: USDC, tokenB: USDT, fee: FeeAmount.LOWEST }, // 0.01%
+  { tokenA: WETH, tokenB: USDT, fee: FeeAmount.LOW }, // 0.05%
+  { tokenA: EURC, tokenB: USDC, fee: FeeAmount.MEDIUM }, // 0.30%
+  // { tokenA: WETH, tokenB: EURC, fee: FeeAmount.MEDIUM }, // 0.30%
+  { tokenA: DAI, tokenB: USDC, fee: FeeAmount.LOWEST }, // 0.01%
+  // { tokenA: WETH, tokenB: DAI, fee: FeeAmount.LOW }, // 0.05%
+  { tokenA: WETH, tokenB: USDC, fee: FeeAmount.LOW }, // 0.05%
 ];

@@ -27,6 +27,7 @@ import Image from "next/image";
 import { Trash } from "@phosphor-icons/react/dist/ssr";
 import TokenInputSelection from "./token-input";
 import { isAddress } from "viem";
+import { quoteExactOutput } from "@/lib/qouter";
 
 const formSchema = z.object({
   tokenIn: z.custom<`0x${string}`>().refine((value) => isAddress(value), {
@@ -38,7 +39,10 @@ const formSchema = z.object({
         message: "Invalid wallet address",
       }),
       tokenOut: z.string().min(1, "Token Out is required"),
-      amount: z.number().min(1, "Amount is required"),
+      amount: z.string().refine((value) => {
+        const numValue = parseFloat(value);
+        return !isNaN(numValue) && numValue > 0;
+      }),
     })
     .array()
     .min(1, "At least one receiver is required"),
@@ -51,9 +55,9 @@ const SwapForm = () => {
       tokenIn: undefined,
       receivers: [
         {
-          address: undefined,
+          address: "" as `0x${string}`,
           tokenOut: "",
-          amount: 0,
+          amount: "",
         },
       ],
     },
@@ -75,6 +79,9 @@ const SwapForm = () => {
         onSubmit={form.handleSubmit(onSubmit)}
         className="w-full min-w-md max-w-2xl h-full flex flex-col space-y-5"
       >
+        <Button type="button" onClick={() => quoteExactOutput("20000")}>
+          Test
+        </Button>
         <FormField
           control={form.control}
           name="tokenIn"
@@ -144,8 +151,8 @@ const SwapForm = () => {
                   <FormControl>
                     <Input
                       placeholder="0x123"
-                      {...field}
                       className="bg-white"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -197,15 +204,23 @@ const SwapForm = () => {
                   <FormItem>
                     <FormControl>
                       <Input
-                        type="text"
-                        placeholder="e.g., 100"
-                        value={field.value}
+                        type="number"
+                        id="amount"
+                        autoComplete="off"
+                        inputMode="decimal"
+                        step="any"
+                        placeholder="0"
+                        {...field}
+                        onKeyDown={(e) => {
+                          if (e.key === ",") {
+                            e.preventDefault();
+                          }
+                        }}
                         onChange={(e) => {
-                          const value =
-                            e.target.value === "" ? "" : Number(e.target.value);
+                          const value = e.target.value.replace(",", ".");
                           field.onChange(value);
                         }}
-                        className="bg-white"
+                        className="bg-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </FormControl>
                     <FormMessage />
@@ -228,7 +243,7 @@ const SwapForm = () => {
         <Button
           type="button"
           onClick={() =>
-            append({ address: "0x" as `0x${string}`, tokenOut: "", amount: 0 })
+            append({ address: "" as `0x${string}`, tokenOut: "", amount: "" })
           }
           className="mt-2 w-fit"
           disabled={fields.length >= 10}
@@ -237,7 +252,7 @@ const SwapForm = () => {
         </Button>
 
         <Button type="submit" className="w-full text-lg font-semibold p-5">
-          Approve Token
+          Get Quote
         </Button>
       </form>
     </Form>
