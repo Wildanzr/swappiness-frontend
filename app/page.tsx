@@ -22,10 +22,10 @@ const TestLogin = () => {
 
       <div className="flex flex-col items-center justify-center space-y-5">
         <h1 className="font-sans text-6xl font-semibold text-center text-neutral-900">
-          Swap Globally,
+          Swap Easy,
         </h1>
         <h1 className="font-sans text-6xl font-semibold text-center text-neutral-900">
-          Spread Happiness
+          No Worries
         </h1>
       </div>
 

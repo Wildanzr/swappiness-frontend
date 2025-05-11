@@ -30,11 +30,19 @@ import { Address, isAddress, parseUnits } from "viem";
 import { getEncodedPath, quoteExactOutput } from "@/lib/qouter";
 import { Token } from "@uniswap/sdk-core";
 import { useDebounceCallback, useWindowSize } from "usehooks-ts";
-import { simplifyNumber } from "@/lib/utils";
+import { delay, simplifyNumber } from "@/lib/utils";
 import { useAccount } from "wagmi";
 import DisperseButton from "./disperse-button";
 import { disperseToStablecoins } from "@/web3/swappiness";
 import Confetti from "react-confetti";
+import { giveAllowance } from "@/web3/erc20";
+import { waitForTransactionReceipt } from "@wagmi/core";
+import {
+  displayLoadingTx,
+  displaySuccessAndExploreTx,
+} from "@/components/shared/toast";
+import { wagmiConfig } from "@/config/wagmi";
+import toast from "react-hot-toast";
 
 interface ToBeQuoted {
   tokenIn: Token;
@@ -72,9 +80,12 @@ const SwapForm = () => {
   const { height, width } = useWindowSize();
   const [showConfetti, setShowConfetti] = useState(false);
   const [tokenInput, setTokenInput] = useState<Token | undefined>(undefined);
+  const [txState, setTxState] = useState<"approval" | "disperse">("approval");
   const [tobeQuoted, setToBeQuoted] = useState<ToBeQuoted[]>([]);
   const [quote, setQuote] = useState<number | undefined>(undefined);
   const [isQuoting, setIsQuoting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
   const debouncedToBeQuoted = useDebounceCallback(setToBeQuoted, 1000);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -98,13 +109,28 @@ const SwapForm = () => {
     name: "receivers",
   });
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
-    console.log(data);
+  const handleResetForm = () => {
+    form.reset({
+      tokenIn: undefined,
+      slippage: "2.5",
+      receivers: [
+        {
+          address: "" as `0x${string}`,
+          tokenOut: "" as `0x${string}`,
+          amount: "",
+        },
+      ],
+    });
+    setTokenInput(undefined);
+    setToBeQuoted([]);
+    setQuote(undefined);
+    setShowConfetti(true);
+    setTimeout(() => {
+      setShowConfetti(false);
+    }, 30000);
   };
 
-  const handleDisperse = async (): Promise<false | `0x${string}`> => {
-    if (!tokenInput) return false;
-
+  const handleDisperse = async (address: Address, tokenInput: Token) => {
     const quotes = await Promise.all(
       tobeQuoted.map(async (item) => {
         const quote = await quoteExactOutput(
@@ -145,28 +171,61 @@ const SwapForm = () => {
       paths: paths,
     });
 
-    return result;
+    if (result === false) return;
+    displayLoadingTx({
+      message: "Transaction in progress...",
+    });
+    await waitForTransactionReceipt(wagmiConfig, {
+      hash: result,
+      chainId: tokenInput.chainId as 8453 | 31337 | undefined,
+      confirmations: 1,
+    });
+    await delay(3000);
+    displaySuccessAndExploreTx({
+      message: "Transaction successful!",
+      txHash: result,
+    });
+
+    handleResetForm();
   };
 
-  const handleResetForm = () => {
-    form.reset({
-      tokenIn: undefined,
-      slippage: "2.5",
-      receivers: [
-        {
-          address: "" as `0x${string}`,
-          tokenOut: "" as `0x${string}`,
-          amount: "",
-        },
-      ],
+  const handleAllowance = async (address: Address, tokenInput: Token) => {
+    const result = await giveAllowance(
+      address,
+      tokenInput.address as Address,
+      tokenInput.chainId
+    );
+    if (result === false) return;
+    displayLoadingTx({
+      message: "Transaction in progress...",
     });
-    setTokenInput(undefined);
-    setToBeQuoted([]);
-    setQuote(undefined);
-    setShowConfetti(true);
-    setTimeout(() => {
-      setShowConfetti(false);
-    }, 30000);
+    await waitForTransactionReceipt(wagmiConfig, {
+      hash: result,
+      chainId: tokenInput.chainId as 8453 | 31337 | undefined,
+      confirmations: 1,
+    });
+    await delay(3000);
+    await handleDisperse(address, tokenInput);
+  };
+
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    try {
+      if (!address) return;
+      if (!tokenInput) return;
+      setIsLoading(true);
+      console.log(data);
+
+      if (txState === "approval") {
+        await handleAllowance(address, tokenInput);
+      } else {
+        await handleDisperse(address, tokenInput);
+      }
+    } catch (error) {
+      console.error("Form submission failed:", error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Watch for changes in receivers' amounts and calculate quote
@@ -504,8 +563,9 @@ const SwapForm = () => {
           <DisperseButton
             quote={quote}
             tokenInput={tokenInput}
-            handleDisperse={handleDisperse}
-            handleResetForm={handleResetForm}
+            isLoading={isLoading}
+            txState={txState}
+            setTxState={setTxState}
             disabled={
               isQuoting ||
               tokenInput === undefined ||

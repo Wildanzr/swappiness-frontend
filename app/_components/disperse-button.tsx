@@ -8,67 +8,27 @@ import { Token } from "@uniswap/sdk-core";
 import { Address, formatUnits, parseUnits, zeroAddress } from "viem";
 import { useAccount, useBalance, useReadContract } from "wagmi";
 import { useEffect, useState } from "react";
-import { giveAllowance } from "@/web3/erc20";
-import toast from "react-hot-toast";
-import { cn } from "@/lib/utils";
-import Link from "next/link";
-import useWaitForTxAction from "@/hooks/use-wait-for-tx";
 
 interface DisperseButtonProps {
   disabled: boolean;
   quote: number | undefined;
   tokenInput: Token | undefined;
-  handleDisperse: () => Promise<false | `0x${string}`>;
-  handleResetForm: () => void;
+  isLoading: boolean;
+  txState: "approval" | "disperse";
+  setTxState: React.Dispatch<React.SetStateAction<"approval" | "disperse">>;
 }
 
 const DisperseButton = ({
   disabled,
   quote,
   tokenInput,
-  handleDisperse,
-  handleResetForm,
+  isLoading,
+  txState,
+  setTxState,
 }: DisperseButtonProps) => {
   const { address } = useAccount();
-  const [isLoading, setIsLoading] = useState(false);
-  const [txHash, setTxHash] = useState<Address | undefined>();
-  const [state, setState] = useState<"approval" | "disperse">("approval");
   const [hasInsufficientBalance, setHasInsufficientBalance] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0); // Force re-render key
-
-  const handlePostAction = async () => {
-    if (state === "approval") {
-      console.log("Done Approval");
-      setState("disperse");
-      setForceUpdate((prev) => prev + 1); // Force re-render
-      setTxHash(undefined);
-
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
-      console.log("Disperse now");
-      try {
-        setIsLoading(true);
-        const result = await handleDisperse();
-        if (result === false) return;
-        setTxHash(result);
-      } catch (error) {
-        console.error("Transaction failed:", error);
-        toast.error("Transaction failed. Please try again.");
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      console.log("Done Disperse");
-      displaySuccessAndExploreTx(txHash);
-      setTxHash(undefined);
-      handleResetForm();
-    }
-  };
-
-  useWaitForTxAction({
-    action: handlePostAction,
-    txHash: txHash,
-    chainId: tokenInput?.chainId,
-  });
 
   const { data: tokenBalance, isLoading: isLoadingTokenBalance } =
     useReadContract({
@@ -118,89 +78,6 @@ const DisperseButton = ({
     },
   });
 
-  const displayLoadingTx = () => {
-    toast.custom((t) => (
-      <div
-        className={cn(
-          "flex flex-row items-center justify-start space-x-2 bg-main text-black p-4 rounded-lg border-2 border-border",
-          t.visible ? "animate-enter" : "animate-leave"
-        )}
-      >
-        <Spinner
-          className="text-black animate-spin size-5"
-          onClick={() => toast.dismiss(t.id)}
-        />
-        <p className="text-neutral-20 text-label">
-          Transaction submitted, waiting for confirmation...
-        </p>
-      </div>
-    ));
-  };
-
-  const displaySuccessAndExploreTx = (txHash: Address | undefined) => {
-    toast.custom((t) => (
-      <div
-        className={cn(
-          "flex flex-row items-center justify-start space-x-2 bg-main text-black p-4 rounded-lg border-2 border-border",
-          t.visible ? "animate-enter" : "animate-leave"
-        )}
-      >
-        <p className="text-black text-label">Transaction successful! </p>
-        <Link
-          href={`https://basescan.org/tx/${txHash}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-black underline"
-        >
-          View on BaseScan
-        </Link>
-      </div>
-    ));
-  };
-
-  const handleAllowance = async () => {
-    if (!address) return;
-    if (!tokenInput) return;
-
-    try {
-      setIsLoading(true);
-      const result = await giveAllowance(
-        address,
-        tokenInput.address as Address,
-        tokenInput.chainId
-      );
-      if (result === false) return;
-      setTxHash(result);
-      displayLoadingTx();
-    } catch (error) {
-      console.error("Transaction failed:", error);
-      toast.error("Transaction failed. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleClick = async () => {
-    if (!address) return;
-    if (!tokenInput) return;
-
-    if (state === "approval") {
-      await handleAllowance();
-    } else {
-      try {
-        setIsLoading(true);
-        const result = await handleDisperse();
-        if (result === false) return;
-        setTxHash(result);
-      } catch (error) {
-        console.error("Transaction failed:", error);
-        toast.error("Transaction failed. Please try again.");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
   // Check if balance is sufficient using useEffect
   useEffect(() => {
     if (!quote || quote <= 0 || !tokenInput) {
@@ -227,8 +104,8 @@ const DisperseButton = ({
   useEffect(() => {
     // Skip if native token or no token/quote
     if (!tokenInput || tokenInput.address === zeroAddress || !quote) {
-      if (state !== "disperse") {
-        setState("disperse");
+      if (txState !== "disperse") {
+        setTxState("disperse");
         setForceUpdate((prev) => prev + 1); // Force re-render
       }
       return;
@@ -241,19 +118,19 @@ const DisperseButton = ({
         parseUnits(quote.toString(), tokenInput.decimals);
 
       // Update state based on approval need
-      if (isApprovalNeeded && state !== "approval") {
-        setState("approval");
+      if (isApprovalNeeded && txState !== "approval") {
+        setTxState("approval");
         setForceUpdate((prev) => prev + 1); // Force re-render
-      } else if (!isApprovalNeeded && state === "approval") {
-        setState("disperse");
+      } else if (!isApprovalNeeded && txState === "approval") {
+        setTxState("disperse");
         setForceUpdate((prev) => prev + 1); // Force re-render
       }
     }
-  }, [allowance, tokenInput, quote, state]);
+  }, [allowance, tokenInput, quote, txState, setTxState]);
 
   return (
     <Button
-      key={`button-${state}-${forceUpdate}`} // Add a key to force re-render when state changes
+      key={`button-${txState}-${forceUpdate}`} // Add a key to force re-render when state changes
       disabled={
         disabled ||
         isLoading ||
@@ -265,7 +142,6 @@ const DisperseButton = ({
       }
       type="submit"
       className="text-lg font-semibold cursor-pointer"
-      onClick={handleClick}
     >
       {/* Inline button content calculation using JSX */}
       {isLoading ? (
@@ -280,7 +156,7 @@ const DisperseButton = ({
         "Insufficient Balance"
       ) : tokenInput.address === zeroAddress ? (
         `Disperse ${tokenInput.symbol}`
-      ) : state === "approval" ? (
+      ) : txState === "approval" ? (
         `Approve ${tokenInput.symbol}`
       ) : (
         `Disperse ${tokenInput.symbol}`

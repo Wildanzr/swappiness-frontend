@@ -24,3 +24,6 @@ export const simplifyNumber = (
 
   return truncatedValue.toFixed(displayDecimals).replace(/\.?0+$/, ""); // Remove trailing zeros
 };
+
+export const delay = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
