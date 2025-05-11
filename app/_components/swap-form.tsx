@@ -24,7 +24,12 @@ import {
 } from "@/components/ui/select";
 import { AVAILABLE_TOKENS_IN, AVAILABLE_TOKENS_OUT } from "@/constants/tokens";
 import Image from "next/image";
-import { Spinner, Trash } from "@phosphor-icons/react/dist/ssr";
+import {
+  FileArrowDown,
+  FileArrowUp,
+  Spinner,
+  Trash,
+} from "@phosphor-icons/react/dist/ssr";
 import TokenInputSelection from "./token-input";
 import { Address, isAddress, parseUnits } from "viem";
 import { getEncodedPath, quoteExactOutput } from "@/lib/qouter";
@@ -305,12 +310,12 @@ const SwapForm = () => {
   }, [form, tobeQuoted, tokenInput, form.watch("slippage")]);
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center">
+    <div className="w-full min-w-sm max-w-4xl h-full flex flex-col items-center justify-center">
       {showConfetti && <Confetti width={width} height={height} />}
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="w-full min-w-md max-w-2xl h-full flex flex-col space-y-5"
+          className="w-full h-full flex flex-col space-y-5"
         >
           <FormField
             control={form.control}
@@ -357,12 +362,22 @@ const SwapForm = () => {
               Recipient(s)
             </p>
 
-            <div className="flex flex-row gap-5">
-              <Button variant="neutral" type="button">
+            <div className="flex flex-row gap-2 md:gap-5">
+              <Button
+                variant="neutral"
+                type="button"
+                className="text-xs md:text-base"
+              >
+                <FileArrowUp className="size-8 text-black" />
                 Import CSV
               </Button>
-              <Button variant="neutral" type="button">
-                Download Sample
+              <Button
+                variant="neutral"
+                type="button"
+                className="text-xs md:text-base"
+              >
+                <FileArrowDown className="size-8 text-black" />
+                CSV Sample
               </Button>
             </div>
           </div>
@@ -387,7 +402,7 @@ const SwapForm = () => {
                 control={form.control}
                 name={`receivers.${index}.address`}
                 render={({ field }) => (
-                  <FormItem className="col-span-4">
+                  <FormItem className="col-span-8 md:col-span-4">
                     <FormControl>
                       <Input
                         disabled={tokenInput === undefined}
@@ -404,7 +419,7 @@ const SwapForm = () => {
                 control={form.control}
                 name={`receivers.${index}.tokenOut`}
                 render={({ field }) => (
-                  <FormItem className="col-span-2">
+                  <FormItem className="col-span-4 md:col-span-2">
                     <Select
                       disabled={tokenInput === undefined}
                       onValueChange={field.onChange}
@@ -438,7 +453,7 @@ const SwapForm = () => {
                   </FormItem>
                 )}
               />
-              <div className="flex flex-row gap-2 col-span-2 items-start justify-start">
+              <div className="flex flex-row gap-2 col-span-4 md:col-span-2 items-start justify-start">
                 <FormField
                   control={form.control}
                   name={`receivers.${index}.amount`}
@@ -483,8 +498,8 @@ const SwapForm = () => {
             </div>
           ))}
 
-          <div className="flex flex-row items-start justify-between pt-2">
-            <div className="flex flex-row items-start justify-start gap-5">
+          <div className="flex flex-col lg:flex-row items-start justify-between pt-2">
+            <div className="flex flex-row items-start justify-between gap-5 w-full lg:w-fit">
               <Button
                 type="button"
                 onClick={() =>
@@ -537,7 +552,7 @@ const SwapForm = () => {
             </div>
 
             {tokenInput && (
-              <div className="flex flex-col items-end justify-start">
+              <div className="flex flex-col items-end justify-end w-full lg:w-fit pt-5 lg:pt-0">
                 <p className="text-black/50 font-sans text-base">Total</p>
                 {isQuoting ? (
                   <Spinner className="animate-spin text-black/50 size-8" />
