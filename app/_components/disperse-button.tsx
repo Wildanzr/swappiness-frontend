@@ -86,17 +86,24 @@ const DisperseButton = ({
     }
 
     let insufficientBalance = false;
+
     if (tokenInput.address === zeroAddress) {
-      insufficientBalance = nativeBalance
-        ? parseFloat(nativeBalance.formatted) < quote
-        : false;
+      // Native token balance check
+      if (nativeBalance) {
+        const balanceValue = parseFloat(nativeBalance.formatted);
+        insufficientBalance = balanceValue < quote;
+      }
     } else {
-      insufficientBalance = tokenBalance
-        ? parseFloat(formatUnits(tokenBalance as bigint, tokenInput.decimals)) <
-          quote
-        : false;
+      // ERC20 token balance check
+      if (tokenBalance !== undefined) {
+        const formattedBalance = parseFloat(
+          formatUnits(tokenBalance as bigint, tokenInput.decimals)
+        );
+        insufficientBalance = formattedBalance < quote;
+      }
     }
 
+    // Update the state with the calculated value
     setHasInsufficientBalance(insufficientBalance);
   }, [quote, tokenInput, nativeBalance, tokenBalance]);
 

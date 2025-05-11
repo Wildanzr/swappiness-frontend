@@ -51,9 +51,9 @@ export const quoteExactOutput = async (
 
   // Format the result to a readable string
   const formattedAmountIn = formatUnits(quotedAmountIn, tokenIn.decimals);
-  console.info(
-    `Quoted Amount In: ${formattedAmountIn} ${tokenIn.symbol} for ${amountOut} ${tokenOut.symbol}`
-  );
+  // console.info(
+  //   `Quoted Amount In: ${formattedAmountIn} ${tokenIn.symbol} for ${amountOut} ${tokenOut.symbol}`
+  // );
 
   return formattedAmountIn;
 };

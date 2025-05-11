@@ -23,15 +23,15 @@ export const disperseToStablecoins = async ({
   paths,
   chainId,
 }: DisperseToStablecoinsProps) => {
-  console.info("Dispersing to stablecoins...", {
-    tokenIn,
-    recipients,
-    tokenOut,
-    amountOut,
-    amountInMax,
-    paths,
-    chainId,
-  });
+  // console.info("Dispersing to stablecoins...", {
+  //   tokenIn,
+  //   recipients,
+  //   tokenOut,
+  //   amountOut,
+  //   amountInMax,
+  //   paths,
+  //   chainId,
+  // });
 
   try {
     const maxAmount = amountInMax.reduce(

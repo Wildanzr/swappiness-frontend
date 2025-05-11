@@ -34,7 +34,7 @@ export function useSwapQuotes(
               return parseFloat(quote);
             })
           );
-          console.info("Quotes: ", quotes);
+          // console.info("Quotes: ", quotes);
 
           // Calculate sum of all quotes
           const totalQuote = quotes.reduce((acc, curr) => acc + curr, 0);

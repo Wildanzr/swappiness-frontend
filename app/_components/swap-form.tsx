@@ -31,7 +31,7 @@ import {
   Trash,
 } from "@phosphor-icons/react/dist/ssr";
 import TokenInputSelection from "./token-input";
-import { Address, isAddress, parseUnits } from "viem";
+import { Address, formatUnits, isAddress, parseUnits } from "viem";
 import { getEncodedPath, quoteExactOutput } from "@/lib/qouter";
 import { Token } from "@uniswap/sdk-core";
 import { useDebounceCallback, useWindowSize } from "usehooks-ts";
@@ -49,6 +49,8 @@ import {
 import { wagmiConfig } from "@/config/wagmi";
 import toast from "react-hot-toast";
 import { useSwapQuotes } from "./use-swap-quotes";
+import Link from "next/link";
+import Papa from "papaparse";
 
 interface ToBeQuoted {
   tokenIn: Token;
@@ -150,7 +152,7 @@ const SwapForm = () => {
     const paths = tobeQuoted.map((item) =>
       getEncodedPath(item.tokenIn, item.tokenOut)
     );
-    console.info("Quotes: ", quotes);
+    // console.info("Quotes: ", quotes);
     const recipients = form.getValues("receivers").map((item) => item.address);
     const tokenOut = form.getValues("receivers").map((item) => item.tokenOut);
     const amountOut = form.getValues("receivers").map((item) => {
@@ -226,6 +228,136 @@ const SwapForm = () => {
     }
   };
 
+  // Add this function to the SwapForm component
+  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset the input value to allow uploading the same file again
+    e.target.value = "";
+
+    // Check file type
+    if (!file.name.endsWith(".csv")) {
+      toast.error("Please upload a CSV file");
+      return;
+    }
+
+    // Check file size (100KB limit)
+    if (file.size > 100 * 1024) {
+      toast.error("File size should not exceed 100KB");
+      return;
+    }
+
+    // Parse CSV
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        if (results.errors.length > 0) {
+          toast.error("Error parsing CSV file: " + results.errors[0].message);
+          return;
+        }
+
+        if (results.data.length === 0) {
+          toast.error("CSV file is empty");
+          return;
+        }
+
+        // Validate format (should have recipients, token, amount columns)
+        const firstRow = results.data[0] as Record<string, string>;
+        if (!firstRow.recipients || !firstRow.token || !firstRow.amount) {
+          toast.error(
+            "CSV format is invalid. Should contain recipients, token, and amount columns."
+          );
+          return;
+        }
+
+        // Process the data
+        const validRecipients = [];
+        const invalidRows = [];
+
+        for (let i = 0; i < results.data.length; i++) {
+          const row = results.data[i] as Record<string, string>;
+
+          // Validate address
+          if (!isAddress(row.recipients)) {
+            invalidRows.push(`Row ${i + 1}: Invalid address ${row.recipients}`);
+            continue;
+          }
+
+          // Find token in AVAILABLE_TOKENS_OUT to get decimals
+          const tokenInfo = AVAILABLE_TOKENS_OUT.find(
+            (item) =>
+              item.token.address.toLowerCase() === row.token.toLowerCase()
+          );
+
+          if (!tokenInfo) {
+            invalidRows.push(`Row ${i + 1}: Token ${row.token} not supported`);
+            continue;
+          }
+
+          // Validate amount
+          const amount = parseFloat(row.amount);
+          if (isNaN(amount) || amount <= 0) {
+            invalidRows.push(`Row ${i + 1}: Invalid amount`);
+            continue;
+          }
+
+          // Format amount according to token decimals
+          const formattedAmount = simplifyNumber(
+            Number(formatUnits(BigInt(row.amount), tokenInfo.token.decimals)),
+            tokenInfo.token.decimals
+          );
+
+          // Add to valid recipients
+          validRecipients.push({
+            address: row.recipients as `0x${string}`,
+            tokenOut: row.token as `0x${string}`,
+            amount: formattedAmount,
+          });
+        }
+
+        // Show errors if any
+        if (invalidRows.length > 0) {
+          toast.error(`Found ${invalidRows.length} invalid rows in CSV`);
+          console.error("Invalid CSV rows:", invalidRows);
+        }
+
+        // Update form if we have valid recipients
+        if (validRecipients.length > 0) {
+          form.setValue("receivers", validRecipients);
+          toast.success(
+            `Successfully imported ${validRecipients.length} recipients`
+          );
+
+          // Update toBeQuoted directly when importing CSV
+          if (tokenInput) {
+            const newToBeQuoted: ToBeQuoted[] = validRecipients.map(
+              (receiver) => {
+                const tokenOut = AVAILABLE_TOKENS_OUT.find(
+                  (item) => item.token.address === receiver.tokenOut
+                )?.token as Token;
+
+                return {
+                  tokenIn: tokenInput,
+                  tokenOut,
+                  amountOut: receiver.amount.toString(),
+                };
+              }
+            );
+
+            debouncedToBeQuoted(newToBeQuoted);
+          }
+        } else {
+          toast.error("No valid recipients found in CSV");
+        }
+      },
+      error: (error) => {
+        toast.error("Error reading CSV file: " + error.message);
+      },
+    });
+  };
+
   useEffect(() => {
     const subscription = form.watch(async (value, { name }) => {
       if ((name?.includes("receivers") || name === "receivers") && tokenInput) {
@@ -266,7 +398,7 @@ const SwapForm = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, [debouncedToBeQuoted, form, form.watch, tokenInput, tobeQuoted]);
+  }, [debouncedToBeQuoted, form, form.watch, tokenInput, tobeQuoted, address]);
 
   return (
     <div className="w-full min-w-sm max-w-4xl h-full flex flex-col items-center justify-center">
@@ -290,11 +422,30 @@ const SwapForm = () => {
                 <Select
                   onValueChange={(value) => {
                     field.onChange(value);
-                    setTokenInput(
-                      AVAILABLE_TOKENS_IN.find(
-                        (item) => item.token.address === value
-                      )?.token
-                    );
+                    const selectedToken = AVAILABLE_TOKENS_IN.find(
+                      (item) => item.token.address === value
+                    )?.token;
+                    setTokenInput(selectedToken);
+
+                    // Update tobeQuoted with the new tokenIn
+                    if (selectedToken) {
+                      const currentReceivers = form.getValues("receivers");
+                      const newToBeQuoted = currentReceivers
+                        .filter(
+                          (r) => r.tokenOut && parseFloat(r.amount || "0") > 0
+                        )
+                        .map((receiver) => {
+                          const tokenOut = AVAILABLE_TOKENS_OUT.find(
+                            (item) => item.token.address === receiver.tokenOut
+                          )?.token as Token;
+                          return {
+                            tokenIn: selectedToken,
+                            tokenOut,
+                            amountOut: receiver.amount,
+                          };
+                        });
+                      debouncedToBeQuoted(newToBeQuoted);
+                    }
                   }}
                   defaultValue={field.value}
                 >
@@ -322,22 +473,36 @@ const SwapForm = () => {
             </p>
 
             <div className="flex flex-row gap-2 md:gap-5">
-              <Button
-                variant="neutral"
-                type="button"
-                className="text-xs md:text-base"
-              >
-                <FileArrowUp className="size-8 text-black" />
-                Import CSV
-              </Button>
-              <Button
-                variant="neutral"
-                type="button"
-                className="text-xs md:text-base"
-              >
-                <FileArrowDown className="size-8 text-black" />
-                CSV Sample
-              </Button>
+              <div className="flex items-center justify-center">
+                <Input
+                  type="file"
+                  accept=".csv"
+                  id="csv-upload"
+                  className="hidden"
+                  onChange={handleCsvUpload}
+                />
+                <Button
+                  variant="neutral"
+                  type="button"
+                  className="text-xs md:text-base cursor-pointer"
+                  disabled={tokenInput === undefined}
+                  onClick={() => document.getElementById("csv-upload")?.click()}
+                >
+                  <FileArrowUp className="size-8 text-black" />
+                  Import CSV
+                </Button>
+              </div>
+
+              <Link href={"/assets/example.csv"} download>
+                <Button
+                  variant="neutral"
+                  type="button"
+                  className="text-xs md:text-base cursor-pointer"
+                >
+                  <FileArrowDown className="size-8 text-black" />
+                  CSV Sample
+                </Button>
+              </Link>
             </div>
           </div>
 
