@@ -21,7 +21,7 @@ const BuildersPage = () => {
       handle: "wildanzrrr",
       role: "Solo Dev ⚡💻",
       description:
-        "No cap, this dev eats bugs and simps Chinese queens 24/7. Real ones know the vibes! 💯.",
+        "No cap, this dude eats bugs and simps Chinese queens 24/7. Real ones know the vibes! 💯.",
       pfp: "/assets/Ti2xAVZ3_400x400.jpg",
       twitter: "https://x.com/wildanzrrr",
       github: "https://github.com/wildanzrrr",
@@ -49,7 +49,7 @@ const BuildersPage = () => {
   ];
 
   return (
-    <div className="container mx-auto flex flex-col space-y-10 items-center justify-center h-full">
+    <div className="container mx-auto flex flex-col space-y-10 items-center justify-center h-full p-10">
       {/* Team Header */}
       <motion.div
         className="container mx-auto mb-16 text-center"
@@ -58,11 +58,10 @@ const BuildersPage = () => {
         transition={{ duration: 0.6 }}
       >
         <h1 className="text-4xl md:text-5xl font-bold mb-4 text-coinbase">
-          Meet Our Team
+          Meet Our Team ✨
         </h1>
         <p className="text-lg text-black/70 max-w-2xl mx-auto">
-          The brilliant minds behind Swappiness working to revolutionize token
-          dispersal.
+          The brilliant minds behind Swappiness 🚀👻
         </p>
       </motion.div>
 

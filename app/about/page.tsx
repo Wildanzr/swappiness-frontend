@@ -46,12 +46,12 @@ const AboutPage = () => {
 
   return (
     <motion.div
-      className="container mx-auto flex flex-col space-y-10 items-center justify-center h-full"
+      className="container mx-auto flex flex-col space-y-10 items-center justify-center h-full p-10"
       initial="hidden"
       animate="show"
       variants={container}
     >
-      <motion.section className="w-full pt-5 min-w-md" variants={fadeIn}>
+      <motion.section className="w-full pt-5 min-w-sm" variants={fadeIn}>
         <div className="px-4 md:px-6">
           <motion.div
             className="flex flex-col items-center justify-center space-y-4 text-center"
@@ -69,14 +69,20 @@ const AboutPage = () => {
                 className="text-3xl font-bold tracking-tighter md:text-4xl"
                 variants={item}
               >
-                Simplify Your Token Transfers
+                Token Swap?
               </motion.h2>
+              <motion.h3
+                className="text-xl font-bold tracking-tighter md:text-2xl text-main"
+                variants={item}
+              >
+                We Vibe With Simple ✨
+              </motion.h3>
               <motion.p
                 className="text-black md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed"
                 variants={item}
               >
-                Swappiness reduces 8+ transactions into just 1, saving you time
-                and gas fees.
+                NGL, Swappiness is lowkey fire 🔥 - turning 8+ transactions into
+                just 1. Less time, less fees, more vibes fr fr 💅
               </motion.p>
             </div>
           </motion.div>
@@ -89,27 +95,27 @@ const AboutPage = () => {
                 {[
                   {
                     step: "1",
-                    title: "Connect Your Wallet",
+                    title: "Connect Your Wallet 👛",
                     description:
-                      "Link your crypto wallet to our secure platform.",
+                      "Link ur wallet bestie, it's giving secure vibes only ✨",
                   },
                   {
                     step: "2",
-                    title: "Select Source Token",
+                    title: "Pick A Token 💰",
                     description:
-                      "Choose which token you want to convert (ETH, USDC, DAI, etc.).",
+                      "Choose which token hits different for you (ETH, USDC, DAI, whatevs)",
                   },
                   {
                     step: "3",
-                    title: "Add Recipients",
+                    title: "Drop Those Addresses 📲",
                     description:
-                      "Enter wallet addresses and specify which stablecoin and amount each should receive.",
+                      "Slide in those wallet addresses and spill which coin everyone's getting, no cap",
                   },
                   {
                     step: "4",
-                    title: "One-Click Execution",
+                    title: "Send It! 🚀",
                     description:
-                      "Confirm and execute all transfers in a single transaction.",
+                      "One tap and you're done. Literally so fetch, like fr fr",
                   },
                 ].map((step, index) => (
                   <motion.li
@@ -167,9 +173,9 @@ const AboutPage = () => {
                       <ArrowRightLeft className="h-8 w-8" />
                     </motion.div>
                     <div className="space-y-1">
-                      <h3 className="text-xl font-bold">Traditional Method</h3>
+                      <h3 className="text-xl font-bold">Old School Way 💀</h3>
                       <p className="text-sm text-black/50">
-                        Lots of transactions
+                        So many txns, I can&apos;t even 😩
                       </p>
                     </div>
                   </motion.div>
@@ -218,9 +224,9 @@ const AboutPage = () => {
                       <Wallet className="h-8 w-8" />
                     </motion.div>
                     <div className="space-y-1">
-                      <h3 className="text-xl font-bold">Swappiness</h3>
+                      <h3 className="text-xl font-bold">Swappiness Slay 💅</h3>
                       <p className="text-sm text-black/50">
-                        Just 1 transaction
+                        Just 1 transaction, no cap fr fr 🔥
                       </p>
                     </div>
                   </motion.div>
@@ -232,7 +238,7 @@ const AboutPage = () => {
       </motion.section>
 
       <motion.section
-        className="w-full min-w-md"
+        className="w-full min-w-sm"
         variants={fadeIn}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
@@ -254,13 +260,14 @@ const AboutPage = () => {
                 className="text-3xl font-bold tracking-tighter md:text-4xl"
                 variants={item}
               >
-                Endless Possibilities
+                Literally Endless Possibilities ✨🤩
               </motion.h2>
               <motion.p
                 className="max-w-[900px] text-black/50 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed"
                 variants={item}
               >
-                Discover how Swappiness can transform your token management.
+                Low-key obsessed with how Swappiness can level up your token
+                game? Same bestie! 💯🔥
               </motion.p>
             </div>
           </motion.div>
@@ -271,39 +278,39 @@ const AboutPage = () => {
             {[
               {
                 icon: <Globe className="h-8 w-8 text-main" />,
-                title: "Cross-Border Payments",
+                title: "Global Money Moves 🌍",
                 description:
-                  "Send multiple stablecoins across borders without the complexity of multiple transactions.",
+                  "Yeet those stablecoins across borders no cap! Zero stress, zero drama with the multi-tx life ✈️💸",
               },
               {
                 icon: <Users className="h-8 w-8 text-main" />,
-                title: "Salary Distribution",
+                title: "Payday Slay 💅",
                 description:
-                  "Pay remote workers in their preferred stablecoins with a single transaction.",
+                  "Remote squad gets their bag in whatever coin they're vibing with, one tap and done! So fetch! 💰👑",
               },
               {
                 icon: <Wallet className="h-8 w-8 text-main" />,
-                title: "Profit Splitting",
+                title: "Profit Szn 📈",
                 description:
-                  "Whales can take profit and split it among multiple wallets efficiently.",
+                  "Are u whaleess? Split 'em between wallets in literally one go. Whale tingz and it's giving efficiency 🐳✨",
               },
               {
                 icon: <ArrowRightLeft className="h-8 w-8 text-main" />,
-                title: "Portfolio Diversification",
+                title: "Diversify = Iconic 💯",
                 description:
-                  "Diversify your holdings across multiple tokens in a single transaction.",
+                  "Spread your tokens like tea sis! One tx and your portfolio's living its best life fr fr 🔄💎",
               },
               {
                 icon: <Banknote className="h-8 w-8 text-main" />,
-                title: "Merchant Refunds",
+                title: "Refund Vibes 🤑",
                 description:
-                  "Process multiple customer refunds in different stablecoins at once.",
+                  "Customer refunds hitting different stables all at once? We ate that! No more basic multi-tx life 💁‍♂️💸",
               },
               {
                 icon: <Users className="h-8 w-8 text-main" />,
-                title: "Expense Sharing",
+                title: "Split The Bill Besties 👯‍♀️",
                 description:
-                  "Split expenses among friends or team members in their preferred currencies.",
+                  "Everyone gets their share in whatever coin they're simping for. Friend group economics just got upgraded! 🍕💯",
               },
             ].map((useCase, index) => (
               <motion.div

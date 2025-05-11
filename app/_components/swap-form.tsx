@@ -48,6 +48,7 @@ import {
 } from "@/components/shared/toast";
 import { wagmiConfig } from "@/config/wagmi";
 import toast from "react-hot-toast";
+import { useSwapQuotes } from "./use-swap-quotes";
 
 interface ToBeQuoted {
   tokenIn: Token;
@@ -55,7 +56,7 @@ interface ToBeQuoted {
   amountOut: string;
 }
 
-const formSchema = z.object({
+export const formSchema = z.object({
   tokenIn: z.custom<`0x${string}`>().refine((value) => isAddress(value), {
     message: "Please select a token",
   }),
@@ -87,10 +88,7 @@ const SwapForm = () => {
   const [tokenInput, setTokenInput] = useState<Token | undefined>(undefined);
   const [txState, setTxState] = useState<"approval" | "disperse">("approval");
   const [tobeQuoted, setToBeQuoted] = useState<ToBeQuoted[]>([]);
-  const [quote, setQuote] = useState<number | undefined>(undefined);
-  const [isQuoting, setIsQuoting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
   const debouncedToBeQuoted = useDebounceCallback(setToBeQuoted, 1000);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -107,8 +105,7 @@ const SwapForm = () => {
       ],
     },
   });
-
-  // Add useFieldArray hook to handle the receivers array
+  const { quote, isQuoting } = useSwapQuotes(form, tobeQuoted, tokenInput);
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "receivers",
@@ -116,7 +113,6 @@ const SwapForm = () => {
 
   const handleResetForm = () => {
     form.reset({
-      tokenIn: undefined,
       slippage: "2.5",
       receivers: [
         {
@@ -126,16 +122,14 @@ const SwapForm = () => {
         },
       ],
     });
-    setTokenInput(undefined);
     setToBeQuoted([]);
-    setQuote(undefined);
     setShowConfetti(true);
     setTimeout(() => {
       setShowConfetti(false);
     }, 30000);
   };
 
-  const handleDisperse = async (address: Address, tokenInput: Token) => {
+  const handleDisperse = async (tokenInput: Token) => {
     const quotes = await Promise.all(
       tobeQuoted.map(async (item) => {
         const quote = await quoteExactOutput(
@@ -156,7 +150,7 @@ const SwapForm = () => {
     const paths = tobeQuoted.map((item) =>
       getEncodedPath(item.tokenIn, item.tokenOut)
     );
-    console.log("Quotes: ", quotes);
+    console.info("Quotes: ", quotes);
     const recipients = form.getValues("receivers").map((item) => item.address);
     const tokenOut = form.getValues("receivers").map((item) => item.tokenOut);
     const amountOut = form.getValues("receivers").map((item) => {
@@ -210,20 +204,19 @@ const SwapForm = () => {
       confirmations: 1,
     });
     await delay(3000);
-    await handleDisperse(address, tokenInput);
+    await handleDisperse(tokenInput);
   };
 
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  const onSubmit = async () => {
     try {
       if (!address) return;
       if (!tokenInput) return;
       setIsLoading(true);
-      console.log(data);
 
       if (txState === "approval") {
         await handleAllowance(address, tokenInput);
       } else {
-        await handleDisperse(address, tokenInput);
+        await handleDisperse(tokenInput);
       }
     } catch (error) {
       console.error("Form submission failed:", error);
@@ -233,7 +226,6 @@ const SwapForm = () => {
     }
   };
 
-  // Watch for changes in receivers' amounts and calculate quote
   useEffect(() => {
     const subscription = form.watch(async (value, { name }) => {
       if ((name?.includes("receivers") || name === "receivers") && tokenInput) {
@@ -275,39 +267,6 @@ const SwapForm = () => {
 
     return () => subscription.unsubscribe();
   }, [debouncedToBeQuoted, form, form.watch, tokenInput, tobeQuoted]);
-
-  useEffect(() => {
-    const fetchQuotes = async () => {
-      if (tobeQuoted.length > 0 && tokenInput) {
-        console.log("To be quoted: ", tobeQuoted);
-        setIsQuoting(true);
-        const quotes = await Promise.all(
-          tobeQuoted.map(async (item) => {
-            const quote = await quoteExactOutput(
-              item.tokenIn,
-              item.tokenOut,
-              item.amountOut
-            );
-            return parseFloat(quote);
-          })
-        );
-        console.log("Quotes: ", quotes);
-
-        // Calculate sum of all quotes
-        const totalQuote = quotes.reduce((acc, curr) => acc + curr, 0);
-        const slippage =
-          (totalQuote * Number(form.getValues("slippage"))) / 100;
-        console.log("2.5% fee: ", slippage);
-        setQuote(totalQuote + slippage);
-        setIsQuoting(false);
-      } else {
-        setQuote(undefined);
-      }
-    };
-
-    fetchQuotes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, tobeQuoted, tokenInput, form.watch("slippage")]);
 
   return (
     <div className="w-full min-w-sm max-w-4xl h-full flex flex-col items-center justify-center">
@@ -510,7 +469,7 @@ const SwapForm = () => {
                   })
                 }
                 className="mt-2 w-fit"
-                disabled={fields.length >= 10}
+                disabled={fields.length >= 50}
               >
                 Add Recipients
               </Button>

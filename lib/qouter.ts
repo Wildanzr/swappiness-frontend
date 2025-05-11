@@ -51,7 +51,7 @@ export const quoteExactOutput = async (
 
   // Format the result to a readable string
   const formattedAmountIn = formatUnits(quotedAmountIn, tokenIn.decimals);
-  console.log(
+  console.info(
     `Quoted Amount In: ${formattedAmountIn} ${tokenIn.symbol} for ${amountOut} ${tokenOut.symbol}`
   );
 
@@ -110,8 +110,6 @@ export function getSwapRoutes(
   tokenIn: Token,
   tokenOut: Token
 ): Route | undefined {
-  console.log("Token In: ", tokenIn.symbol);
-  console.log("Token Out: ", tokenOut.symbol);
   const possibleRoutes: Route[] = [];
 
   // Check for direct routes (single-hop)
@@ -130,8 +128,6 @@ export function getSwapRoutes(
         path,
         fees: [route.fee],
       });
-
-      console.log("Direct Route Found: ", possibleRoutes[0]);
 
       // If we found a direct route, return it immediately
       return possibleRoutes[0];
@@ -189,8 +185,6 @@ export function getSwapRoutes(
       });
     }
   });
-
-  console.log("Multi-hop Routes Found: ", possibleRoutes);
 
   // Return the first multi-hop route if we found any
   if (possibleRoutes.length > 0) {

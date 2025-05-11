@@ -43,7 +43,7 @@ const coinbaseDisplay = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Swappiness | Swap Easy, Spread Happiness",
+  title: "Swappiness | Swap Easy, No Worries",
   description:
     "Send multiple stablecoins to different addresses in a single transaction. Simplify cross-border payments, salary distribution, portfolio management, and more with Swappiness.",
   keywords: [

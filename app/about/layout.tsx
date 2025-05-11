@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Fragment } from "react";
 
 export const metadata: Metadata = {
-  title: "About Swappiness | Our Mission and Story",
+  title: "About | Swap Easy, No Worries",
   description:
     "Learn about Swappiness, the platform that enables multi-token transfers in a single transaction. Discover our mission to simplify crypto payments and explore our various use cases.",
   keywords: [
